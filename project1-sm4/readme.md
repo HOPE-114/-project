@@ -52,7 +52,7 @@
 - 通过查表替代实时的 S 盒替换与线性变换，减少计算耗时（`sm4_encrypt_block_ttable`）
 - 首先定义SM4_TTABLE结构体及初始化方法，通过预计算S盒值与线性变换L_transform的组合结果，生成4个256项的T表（T0-T3），并对部分结果进行循环移位处理；随后实现的sm4_encrypt_block_ttable函数，在加密流程中通过将轮输入拆分为 4 个字节，直接从预计算的 T 表中查表并异或得到轮函数结果，替代了原始实现中实时计算S盒替换与线性变换的过程，在保持加密结果一致性的同时提升了运算效率。
 
-```
+```c++
 using ttable_t = std::array<u32, 256>;
 struct SM4_TTABLE {
     ttable_t T0, T1, T2, T3;
@@ -98,7 +98,7 @@ void sm4_encrypt_block_ttable(const u8 in[16], u8 out[16], const u32 rk[32]) {
 ### 3. AVX2 并行加速
 - 利用 AVX2 指令集的 256 位寄存器，一次并行处理 4 个 16 字节明文块（`sm4_encrypt_4blocks_avx2`）；
 - 设计适配 AVX2 的 T 表结构（`SM4_AVX2_TTABLE`），通过向量操作提升并行效率。
-```
+```c++
 struct SM4_AVX2_TTABLE {
     alignas(32) std::array<__m128i, 256> t0, t1, t2, t3;
 
@@ -179,7 +179,7 @@ void sm4_encrypt_4blocks_avx2(const u8* in, u8* out, const u32 rk[32]) {
 ### 4. AES-NI 指令集优化
 - 借助 AES-NI 指令的快速查表能力，加速 S 盒替换过程（`sm4_encrypt_block_aesni`）；
 - 初始化 AES 风格的 S 盒向量表（`SM4_SBOX_AES`），利用 `_mm_shuffle_epi8` 指令高效获取 S 盒值。
-```
+```c++
 void sm4_encrypt_block_aesni(const u8 in[16], u8 out[16], const u32 rk[32]) {
     
     u32 X[4] = { 0 };
@@ -228,7 +228,7 @@ void sm4_encrypt_block_aesni(const u8 in[16], u8 out[16], const u32 rk[32]) {
 ### 5. SM4-GCM 模式
 - 实现 Galois/Counter Mode，结合 SM4 加密与 GHASH 认证（`sm4_gcm_encrypt`）；
 - 支持附加数据（AAD）的认证，输出加密后的密文与标签（Tag）。
-```
+```c++
 
 
 // ---------------------------
