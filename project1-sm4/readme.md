@@ -45,13 +45,54 @@
         out[4 * i + 3] = (u8)(outw);
     }
 }
-
-
-
+```c++
 
 ### 2. T表优化
 - 预计算 S 盒与线性变换组合的结果（`SM4_TTABLE`），避免加密过程中的重复计算；
-- 通过查表替代实时的 S 盒替换与线性变换，减少计算耗时（`sm4_encrypt_block_ttable`）。
+- 通过查表替代实时的 S 盒替换与线性变换，减少计算耗时（`sm4_encrypt_block_ttable`）
+- 首先定义SM4_TTABLE结构体及初始化方法，通过预计算S盒值与线性变换L_transform的组合结果，生成4个256项的T表（T0-T3），并对部分结果进行循环移位处理；随后实现的sm4_encrypt_block_ttable函数，在加密流程中通过将轮输入拆分为 4 个字节，直接从预计算的 T 表中查表并异或得到轮函数结果，替代了原始实现中实时计算S盒替换与线性变换的过程，在保持加密结果一致性的同时提升了运算效率。
+```
+using ttable_t = std::array<u32, 256>;
+struct SM4_TTABLE {
+    ttable_t T0, T1, T2, T3;
+    void init_from_sbox() {
+        for (int b = 0; b < 256; ++b) {
+            u32 sb = (u32)SM4_SBOX[b];
+            u32 w0 = L_transform((u32)sb << 24);
+            u32 w1 = L_transform((u32)sb << 16);
+            u32 w2 = L_transform((u32)sb << 8);
+            u32 w3 = L_transform((u32)sb);
+            T0[b] = w0;
+            T1[b] = rotl32(w1, 8);
+            T2[b] = rotl32(w2, 16);
+            T3[b] = rotl32(w3, 24);
+        }
+    }
+} TTABLE;
+
+void sm4_encrypt_block_ttable(const u8 in[16], u8 out[16], const u32 rk[32]) {
+    u32 X[4] = { 0 };
+    for (int i = 0; i < 4; ++i) X[i] = (u32(in[4 * i]) << 24) | (u32(in[4 * i + 1]) << 16) |
+        (u32(in[4 * i + 2]) << 8) | u32(in[4 * i + 3]);
+    for (int r = 0; r < 32; ++r) {
+        u32 a = X[1] ^ X[2] ^ X[3] ^ rk[r];
+        u8 b0 = (a >> 24) & 0xFF;
+        u8 b1 = (a >> 16) & 0xFF;
+        u8 b2 = (a >> 8) & 0xFF;
+        u8 b3 = a & 0xFF;
+        u32 t = TTABLE.T0[b0] ^ TTABLE.T1[b1] ^ TTABLE.T2[b2] ^ TTABLE.T3[b3];
+        u32 newX = X[0] ^ t;
+        X[0] = X[1]; X[1] = X[2]; X[2] = X[3]; X[3] = newX;
+    }
+    for (int i = 0; i < 4; ++i) {
+        u32 outw = X[3 - i];
+        out[4 * i + 0] = (u8)(outw >> 24);
+        out[4 * i + 1] = (u8)(outw >> 16);
+        out[4 * i + 2] = (u8)(outw >> 8);
+        out[4 * i + 3] = (u8)(outw);
+    }
+}
+```
 
 ### 3. AVX2 并行加速
 - 利用 AVX2 指令集的 256 位寄存器，一次并行处理 4 个 16 字节明文块（`sm4_encrypt_4blocks_avx2`）；
