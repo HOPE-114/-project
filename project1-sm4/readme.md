@@ -362,4 +362,5 @@ void sm4_gcm_encrypt(const u8 key[16], const u8 iv[12], const u8* plaintext, siz
 其中，优化倍数为该版本速率与基础实现速率的比值，直观反映优化效果。
 
 ## 六、结论
+-由结果可知，经过T表、AESNI以及SIMD优化后的SM4算法的执行效率显著提高。
 
