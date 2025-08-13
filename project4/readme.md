@@ -226,7 +226,7 @@ for (int j = 0; j < 64; ) {
 ![image](/project4/结果.png)
 
 
-# Merkle 树实现（基于 SM3 和 RFC6962）技术文档
+# Merkle 树实现及存在性、不存在性证明
 ## 一、功能概述
 基于 SM3 哈希算法与 RFC6962 规范，实现支持 10 万级叶子节点 的 Merkle 树，提供：
 高效构建 Merkle 树（分层哈希计算）
