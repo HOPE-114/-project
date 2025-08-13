@@ -224,3 +224,71 @@ for (int j = 0; j < 64; ) {
 
 通过对比标准实现与优化实现的执行耗时和吞吐量，验证优化效果，量化算法性能提升。
 ![image](/project4/结果.png)
+
+
+# Merkle 树实现（基于 SM3 和 RFC6962）技术文档
+## 一、功能概述
+基于 SM3 哈希算法与 RFC6962 规范，实现支持 10 万级叶子节点 的 Merkle 树，提供：
+高效构建 Merkle 树（分层哈希计算）
+叶子节点存在性证明（验证节点在树中）
+叶子节点不存在性证明（验证节点不在树中）
+## 二、核心模块解析
+（一）SM3 哈希实现
+完整实现 SM3 密码杂凑算法，包含：
+辅助函数：ROTL32（循环左移）、P0/P1（置换函数）、FF/GG（压缩函数）
+主哈希逻辑：sm3_hash，处理消息填充、长度扩展、迭代压缩，输出 32 字节哈希值
+
+（二）Merkle 树构建
+遵循 RFC6962 规范，区分叶子节点与内部节点哈希：
+叶子节点：前缀 0x00，通过 hash_leaf 计算
+内部节点：前缀 0x01，通过 hash_internal 计算
+```cpp
+vector<vector<uint8_t>> compute_next_layer(const vector<vector<uint8_t>>& current) { /* 分层计算 */ }  
+
+MerkleTree(const vector<vector<uint8_t>>& data) { /* 构建树 */ }
+```
+（三）存在性证明
+生成并验证叶子节点的包含证明：
+get_inclusion_proof：生成从叶子到根的兄弟节点哈希路径
+verify_inclusion：校验路径与根哈希的一致性
+```cpp
+vector<pair<vector<uint8_t>, bool>> get_inclusion_proof(size_t index);  
+bool verify_inclusion(const vector<uint8_t>& leaf_data, size_t index, const vector<pair<vector<uint8_t>, bool>>& proof, const vector<uint8_t>& expected_root);
+```
+（四）不存在性证明
+基于 “相邻存在节点” 证明目标节点不存在：
+get_exclusion_proof：查找目标索引前后最近的存在节点，生成其证明
+verify_exclusion：校验相邻节点证明与根哈希的一致性
+```cpp
+struct ExclusionProof { /* 证明结构 */ };  
+ExclusionProof get_exclusion_proof(size_t index);  
+bool verify_exclusion(size_t index, const ExclusionProof& proof, const vector<uint8_t>& expected_root);
+```
+## 三、运行流程与测试
+（一）数据生成
+生成 10 万条测试数据（8 字节索引序列）：
+（二）树构建与根哈希
+构建 Merkle 树并输出根哈希：
+```cpp
+MerkleTree merkle_tree(test_data);  
+print_hex(merkle_tree.get_root(), "根哈希");
+```
+（三）存在性证明测试
+（四）不存在性证明测试
+## 四、常见问题与修复
+（一）存在性证明失败
+原因：验证时传入原始数据而非叶子哈希，或路径索引越界。
+修复：
+```cpp
+// 传入叶子哈希而非原始数据  
+bool inclusion_valid = merkle_tree.verify_inclusion(  
+    merkle_tree.leaves[test_index], test_index, inclusion_proof, merkle_tree.get_root()  
+);
+```
+（二）不存在性证明索引无效
+原因：索引超出叶子总数或未标记 “逻辑不存在”。
+修复：选择有效区间内的索引（如 99999 ），配合业务逻辑标记 “不存在”。
+## 五、扩展与优化
+性能优化：分层并行计算、内存池优化大规模节点存储。
+安全增强：集成 HMAC-SM3 抵御长度扩展攻击，完善不存在性证明的相邻校验逻辑。
+可视化：输出 Merkle 树结构（如 DOT 语言），辅助调试与验证。
