@@ -10,7 +10,7 @@
 代码中，P1 有 {"alice", "bob", "charlie", "david"} 这些标识符，P2 有 {"bob": 100, "charlie": 200, "david": 300, "eve": 400} 这些带值的标识符。它们的交集是 {"bob", "charlie", "david"}，对应的和应该是 600，协议会计算出这个结果而不泄露非交集的信息。  
 
 ## 代码说明
-1. Party1 类（参与方 1）负责提供标识符集合，不包含数值信息
+#### 1. Party1 类（参与方 1）负责提供标识符集合，不包含数值信息
 ```python
 class Party1:
     def __init__(self, identifiers: Set[Identifier]):
@@ -30,7 +30,7 @@ round3(data_from_p2)：
 返回加密的总和  
 receive_z_values(z_values)：存储 P2 返回的 Z 集合，用于后续交集判断  
 
-2. Party2 类（参与方 2）负责提供带数值的标识符集合，需要计算交集和 
+#### 2. Party2 类（参与方 2）负责提供带数值的标识符集合，需要计算交集和 
 ```python
 class Party2:
     def __init__(self, identifiers_with_values: Dict[Identifier, Value]):
@@ -50,7 +50,7 @@ _homomorphic_encrypt(value)：简化的同态加密实现
 支持密文直接相加：E(a) + E(b) = E(a+b)  
 decrypt(encrypted_sum)：解密加密的总和，得到最终结果  
 
-3.协议执行流程（run_protocol 函数）
+#### 3.协议执行流程（run_protocol 函数）
 初始化 P1 和 P2，分别传入各自的数据  
 第一轮：P1 处理自己的标识符并发送给 P2  
 第二轮：P2 处理 P1 的数据生成 Z 集合，同时处理自己的数据并返回  
