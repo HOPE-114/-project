@@ -1,0 +1,17 @@
+// 引入 Poseidon 哈希相关组件
+include "poseidon.circom"; 
+
+template Poseidon2Hash() {
+    // 定义输入输出信号
+    signal input privateInput[3]; // 隐私输入，对应 t=3 的原象
+    signal output hashOutput;     // 公开输出，哈希结果
+
+    // 实例化 Poseidon 哈希，根据 (n,t,d)=(256,3,5) 设置参数
+    component poseidon = Poseidon(3, 5, 256); // 输入长度 t=3，s-box 指数 d=5，n=256 
+    for (var i = 0; i < 3; i++) {
+        poseidon.inputs[i] <== privateInput[i];
+    }
+    hashOutput <== poseidon.out;
+}
+
+component main = Poseidon2Hash();
