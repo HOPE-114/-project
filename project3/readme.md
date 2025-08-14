@@ -2,9 +2,9 @@
 
 ## 实验要求
 
-1) poseidon2哈希算法参数参考参考文档1的Table1，用(n,t,d)=(256,3,5)或(256,2,5)  
-2）电路的公开输入用poseidon2哈希值，隐私输入为哈希原象，哈希算法的输入只考虑一个block即可。  
-3) 用Groth16算法生成证明  
+1.poseidon2哈希算法参数参考参考文档1的Table1，用(n,t,d)=(256,3,5)或(256,2,5)  
+2.电路的公开输入用poseidon2哈希值，隐私输入为哈希原象，哈希算法的输入只考虑一个block即可。  
+3.用Groth16算法生成证明  
    
    <img width="953" height="326" alt="image" src="https://github.com/user-attachments/assets/1cae0b5e-7467-4bed-98cc-452705e95b7c" />
 
